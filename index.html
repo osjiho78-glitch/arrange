@@ -1,0 +1,813 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyAiRfJyZ-ngzA4tTA3msh9l3p2Rtp2AzMg",
+    authDomain: "arrange-38cba.firebaseapp.com",
+    projectId: "arrange-38cba",
+    storageBucket: "arrange-38cba.firebasestorage.app",
+    messagingSenderId: "835362911357",
+    appId: "1:835362911357:web:44f172e86d1ebc0acf2d14"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const boardRef = db.collection('liveBoard').doc('state');
+</script>
+
+<style>
+  :root{
+    --bg:#F5F6F8; --panel:#FFFFFF; --ink:#1B1F27; --sub:#6B7280; --line:#E3E5EA;
+    --a:#2F5D82; --a-bg:#E7EEF3;
+    --b:#B5722E; --b-bg:#F3E9DD;
+    --c:#6B4F6B; --c-bg:#EFE7EF;
+    --d:#3D6B5D; --d-bg:#E3EEEA;
+    --ok:#2F7A5D; --ok-bg:#E7F3EE;
+    --busy:#C0433A; --busy-bg:#FBEAE8;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans KR','IBM Plex Sans',sans-serif;font-size:14px;}
+  .wrap{max-width:1260px;margin:0 auto;padding:26px 22px 60px;}
+  h1{font-family:'Space Grotesk',sans-serif;font-size:21px;font-weight:700;margin:0 0 4px;letter-spacing:-.01em;}
+  .sub{color:var(--sub);font-size:13px;margin:0 0 20px;}
+  .section-title{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--sub);margin:22px 0 10px;display:flex;align-items:center;gap:10px;}
+
+  .addpanel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;grid-template-columns:1fr 1.6fr auto;gap:8px;align-items:end;}
+  .addpanel .field label{display:block;font-size:11px;color:var(--sub);margin-bottom:4px;}
+  .addpanel select, .addpanel input{width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:inherit;}
+  .addpanel button{padding:9px 14px;border:none;border-radius:6px;background:var(--ink);color:#fff;font-weight:600;cursor:pointer;white-space:nowrap;}
+  .bulkrow{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px;}
+  .bulkrow textarea{width:100%;min-height:52px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;padding:8px;border:1px solid var(--line);border-radius:6px;resize:vertical;}
+  .bulkrow button{padding:8px 14px;border:1px solid var(--line);background:#fff;border-radius:6px;font-weight:600;cursor:pointer;align-self:start;}
+
+  .queues{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px;}
+  .qcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
+  .qcard .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .qtag{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;padding:2px 8px;border-radius:5px;}
+  .qtag.A{background:var(--a-bg);color:var(--a);} .qtag.B{background:var(--b-bg);color:var(--b);} .qtag.C{background:var(--c-bg);color:var(--c);} .qtag.D{background:var(--d-bg);color:var(--d);}
+  .qmeta{font-size:11.5px;color:var(--sub);}
+  .typehead{display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
+  .typename{font-size:11.5px;color:var(--sub);}
+  .typecount{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;}
+  .caret{font-size:10px;color:var(--sub);transition:transform .15s;}
+  .caret.open{transform:rotate(90deg);}
+  .patientlist{max-height:220px;overflow:auto;margin-top:8px;border-top:1px dashed var(--line);display:none;}
+  .patientlist.open{display:block;}
+  .prow{display:flex;align-items:center;gap:6px;padding:5px 2px;font-size:12px;border-bottom:1px solid var(--line);cursor:pointer;}
+  .prow.selected{background:#EEE9FB;}
+  .teambadge{font-size:9px;background:#7C4DBF;color:#fff;padding:1px 5px;border-radius:4px;flex:none;}
+  .groupbar{display:flex;align-items:center;gap:8px;padding:6px 2px;font-size:11px;color:var(--sub);border-top:1px dashed var(--line);margin-top:4px;}
+  .groupbar button{font-size:10.5px;padding:3px 8px;border:1px solid var(--line);border-radius:5px;background:#fff;cursor:pointer;font-weight:600;}
+  .groupbar button.primary{background:#7C4DBF;color:#fff;border-color:#7C4DBF;}
+  .prow .pname{flex:1;}
+  .prow .ptime{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--sub);}
+  .prow .pn{font-family:'IBM Plex Mono',monospace;color:var(--sub);font-size:10.5px;width:20px;}
+  .prow button{font-size:10.5px;padding:2px 6px;border:1px solid var(--line);border-radius:4px;background:#fff;color:var(--busy);cursor:pointer;}
+  .prow button:hover{background:var(--busy-bg);}
+  .prow button.assignbtn-row{color:var(--ink);border-color:var(--ink);font-weight:600;}
+  .prow button.assignbtn-row:hover{background:var(--ink);color:#fff;}
+  .plempty{color:var(--sub);font-size:11.5px;padding:8px 2px;}
+
+  .staffgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;}
+  .tile{background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;position:relative;}
+  .tile.available{border-color:var(--ok);}
+  .tile.busy{border-color:var(--busy);background:var(--busy-bg);}
+  .tile.off{background:#EFF0F2;border-color:var(--line);}
+  .tile.off .name{color:var(--sub);}
+  .tile.assigned{background:#EAF1FB;border-color:#3B78C2;}
+  .assignedbtn{width:100%;border:none;border-radius:6px;padding:8px 6px;color:#fff;background:#3B78C2;font-weight:700;font-size:12px;cursor:pointer;margin-top:8px;}
+  .assignedbtn:hover{background:#2E60A0;}
+  .completebtn{border:none;background:var(--ok);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;cursor:pointer;margin-left:6px;}
+  .completebtn:hover{background:#256349;}
+  .offtoggle{font-size:10px;padding:3px 8px;border-radius:20px;border:1px solid var(--line);background:#fff;color:var(--sub);cursor:pointer;font-weight:600;}
+  .offtoggle:hover{background:#F0F1F3;}
+  .offtoggle.isoff{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .offtoggle:disabled{opacity:.35;cursor:not-allowed;}
+  .undobtn{width:100%;font-size:10px;padding:5px 6px;border:1px solid var(--line);background:#fff;color:var(--sub);border-radius:5px;cursor:pointer;font-weight:600;margin-top:6px;}
+  .undobtn:hover{background:#F0F1F3;color:var(--ink);}
+  .undobtn:disabled{opacity:.35;cursor:not-allowed;}
+  .tile .toprow{display:flex;align-items:center;justify-content:space-between;}
+  .tile .name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;}
+  .dot.g{background:var(--ok);} .dot.r{background:var(--busy);}
+  .designatedbadge{font-size:9px;background:#1B1F27;color:#fff;padding:1px 6px;border-radius:4px;margin-left:6px;font-weight:600;}
+  .tile .status{font-size:11px;font-weight:600;}
+  .tile.available .status{color:var(--ok);}
+  .tile.busy .status{color:var(--busy);}
+  .tile .timer{font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;margin-top:6px;}
+  .tile .cur{font-size:11px;color:var(--sub);margin-top:2px;}
+
+  .partstats{display:flex;gap:5px;margin-top:9px;}
+  .pstatchip{flex:1;display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:5px;padding:3px 6px 3px 8px;font-size:10px;color:#1B1F27;background:#fff;cursor:pointer;user-select:none;}
+  .pstatchip:hover{background:#F5F6F8;}
+  .pstatchip.expanded{border-color:var(--ink);}
+  .pstatchip b{font-family:'IBM Plex Mono',monospace;font-size:16px;color:#1B1F27;font-weight:700;}
+  .seenlist{margin-top:6px;border:1px solid var(--line);border-radius:6px;padding:6px 8px;max-height:150px;overflow:auto;background:#FAFBFC;}
+  .seenrow{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:11px;padding:3px 0;border-bottom:1px solid var(--line);}
+  .seenrow:last-child{border-bottom:none;}
+  .seenrow span{flex:1;}
+  .seenrow .stime{font-family:'IBM Plex Mono',monospace;color:var(--sub);flex:none;}
+  .seenrow button{font-size:10px;padding:2px 6px;border:1px solid var(--line);border-radius:4px;background:#fff;color:var(--busy);cursor:pointer;flex:none;}
+  .seenrow button:hover{background:var(--busy-bg);}
+  .seenempty{font-size:11px;color:var(--sub);text-align:center;padding:6px 0;}
+
+  .partbuttons{display:flex;gap:5px;margin-top:8px;padding:2px 0;align-items:center;}
+  .pbtn{flex:1;position:relative;border:none;border-radius:5px;padding:3px 2px;color:#fff;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:10px;cursor:pointer;line-height:normal;}
+  .pbtn:disabled{opacity:.3;cursor:not-allowed;}
+  .pbtn.onturn{border:3px solid var(--ink);box-shadow:0 0 0 1px #fff inset;}
+
+  .legend{display:flex;gap:16px;font-size:11.5px;color:var(--sub);align-items:center;margin-top:2px;}
+
+  .startrow{display:flex;gap:14px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;align-items:end;}
+  .startfield{display:flex;flex-direction:column;gap:4px;}
+  .startfield label{font-size:11px;color:var(--sub);font-weight:600;}
+  .startfield select{padding:7px 9px;border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:'IBM Plex Mono',monospace;}
+  .startpreview{font-size:11px;color:var(--sub);font-family:'IBM Plex Mono',monospace;margin-top:2px;}
+  .startapply{padding:8px 14px;border:none;border-radius:6px;background:var(--ink);color:#fff;font-weight:600;cursor:pointer;font-size:12.5px;}
+
+  .managebtn{font-size:11.5px;padding:5px 10px;border:1px solid var(--line);background:#fff;border-radius:6px;cursor:pointer;font-weight:600;color:var(--ink);}
+  .managebtn:hover{background:#F0F1F3;}
+  .managepanel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:12px;}
+  .managerow{display:flex;align-items:center;gap:10px;padding:7px 2px;border-bottom:1px solid var(--line);font-size:13px;}
+  .managerow:last-child{border-bottom:none;}
+  .managerow .mname{font-weight:600;flex:1;}
+  .managerow .mstatus{font-size:11px;color:var(--sub);}
+  .managerow button{font-size:11px;padding:5px 10px;border:1px solid var(--busy);background:#fff;color:var(--busy);border-radius:5px;cursor:pointer;font-weight:600;}
+  .managerow button:disabled{opacity:.3;cursor:not-allowed;border-color:var(--line);color:var(--sub);}
+  .manageaddrow{display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);}
+  .manageaddrow button{padding:8px 14px;border:none;border-radius:6px;background:var(--ink);color:#fff;font-weight:600;cursor:pointer;font-size:12.5px;}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:20px;}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;}
+  .stat .v{font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:700;}
+  .stat .l{font-size:11px;color:var(--sub);margin-top:2px;}
+
+  table{width:100%;border-collapse:collapse;margin-top:14px;font-size:12.5px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+  th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line);}
+  th{font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:.03em;font-weight:600;background:#FAFBFC;}
+  tbody tr:last-child td{border-bottom:none;}
+  .empty-log{color:var(--sub);text-align:center;padding:16px;font-size:12.5px;}
+</style>
+
+<div class="wrap">
+  <h1>실시간 직원 응대 현황판 <span id="syncStatus" style="font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;vertical-align:middle;color:var(--sub);">연결 중...</span></h1>
+  <p class="sub">A(수술상담) · B(시술상담) · C(당일 수술) · D(경과 환자) — 여러 기기에서 열면 실시간으로 같은 화면이 동기화됩니다.</p>
+
+  <div class="section-title">환자 등록</div>
+  <div class="addpanel" style="grid-template-columns:1fr 1.4fr 1fr auto;">
+    <div class="field"><label>파트</label>
+      <select id="inPart"><option value="A">A 파트 · 수술상담</option><option value="B">B 파트 · 시술상담</option><option value="C">C 파트 · 당일 수술</option><option value="D">D 파트 · 경과 환자</option></select>
+    </div>
+    <div class="field"><label>환자 이름/식별자</label>
+      <input id="inName" placeholder="예: 홍길동 (등록 시점이 내원시간으로 기록됩니다)">
+    </div>
+    <div class="field"><label>지정 직원(선택)</label>
+      <select id="inDesig"><option value="">지정 없음</option></select>
+    </div>
+    <button onclick="addPatientUI()">＋ 대기열에 추가</button>
+  </div>
+  <div class="bulkrow">
+    <textarea id="bulkArea" placeholder="파트,이름,지정직원(선택)  (한 줄에 한 명)&#10;A,홍길동&#10;B,김민지,3&#10;C,이서준"></textarea>
+    <button onclick="bulkAdd()">일괄 추가</button>
+  </div>
+
+  <div class="section-title">파트별 대기열</div>
+  <div class="queues" id="queues"></div>
+
+  <div class="section-title">파트별 오늘 시작 순번</div>
+  <div class="startrow" id="startPanel"></div>
+
+  <div class="section-title">
+    <span id="staffCountTitle">직원 현황</span>
+    <button class="managebtn" onclick="toggleManagePanel()">⚙ 직원 관리</button>
+    <span class="legend">
+      <span>테두리 강조 = 그 파트에서 지금 순번이 돌아온 직원 (밀렸던 사람은 자기 차례가 올 때까지 계속 강조됨)</span>
+    </span>
+  </div>
+  <div id="managePanel" style="display:none;"></div>
+  <div class="staffgrid" id="staffgrid"></div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="section-title">응대 기록</div>
+  <div id="logwrap"></div>
+
+  <div class="section-title">카운트 제외 상담 기록 (지정 · 경과)</div>
+  <div id="desigLogWrap"></div>
+</div>
+
+<script>
+let BASE_ORDER = [1,2,3,4,5,6,7]; // 현재 재직중인 직원 번호 목록 (회전의 기준)
+let nextStaffId = 8; // 다음 신규 직원에게 부여할 번호
+function rotateFrom(startId){
+  const idx = BASE_ORDER.indexOf(startId);
+  if(idx===-1) return [...BASE_ORDER];
+  return BASE_ORDER.slice(idx).concat(BASE_ORDER.slice(0,idx));
+}
+let partOrder = { A: rotateFrom(1), B: rotateFrom(1), C: rotateFrom(1), D: rotateFrom(1) }; // 파트별 오늘의 시작 순서
+const PART_LABEL = {A:'수술상담', B:'시술상담', C:'당일 수술', D:'경과 환자'};
+const PART_HEX = {A:'#2F5D82', B:'#B5722E', C:'#6B4F6B', D:'#3D6B5D'};
+const NO_COUNT_PARTS = ['D']; // 이 파트는 실적(처리건수)에 카운트되지 않음
+const now = () => Date.now();
+let pid = 1;
+
+function mkQueue(){ return {waiting:[], done:[]}; }
+let partsData = { A: mkQueue(), B: mkQueue(), C: mkQueue(), D: mkQueue() };
+let openLists = {};
+let selected = { A:new Set(), B:new Set(), C:new Set(), D:new Set() }; // 동반자(팀) 묶기용 선택 상태
+
+let staff = BASE_ORDER.map(id=>({
+  id, busy:false, off:false, part:null, patient:null, startedAt:null, sinceAvailable:now(), doneCount:0,
+  partDone:{A:0,B:0,C:0,D:0}, partPatients:{A:[],B:[],C:[],D:[]}, expandedPart:null,
+  assignedPatient:null, assignedPart:null, lastCompleted:null
+}));
+let queue = { A:[...partOrder.A], B:[...partOrder.B], C:[...partOrder.C], D:[...partOrder.D] }; // 파트별로 아직 이번 순환에서 응대 안 한 직원 목록 (맨 앞이 다음 차례)
+let log = [];
+let designatedLog = [];
+
+function seedDemo(){
+  const seedCounts = { A:30, B:40, C:20 };
+  const t0 = now() - 40*60000;
+  Object.keys(seedCounts).forEach(p=>{
+    for(let i=1;i<=seedCounts[p];i++){
+      partsData[p].waiting.push({id:pid++, name:`환자-${p}${String(i).padStart(2,'0')}`, arrivedAt: t0 + i*45000});
+    }
+  });
+}
+
+function fmtClock(ts){ const d=new Date(ts); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
+function fmtHHMM(ts){ const d=new Date(ts); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function fmtElapsed(ms){ const s=Math.floor(ms/1000); const m=Math.floor(s/60), r=s%60; return String(m).padStart(2,'0')+':'+String(r).padStart(2,'0'); }
+
+window.addPatientUI = function(){
+  const part = document.getElementById('inPart').value;
+  const name = document.getElementById('inName').value.trim();
+  const desig = document.getElementById('inDesig').value;
+  if(!name){ alert('환자 이름을 입력해주세요.'); return; }
+  if(part==='D' && !desig){ alert('D파트(경과 환자)는 담당(지정) 실장을 반드시 선택해야 합니다.'); return; }
+
+  if(desig){
+    const staffId = Number(desig);
+    const s = staff.find(x=>x.id===staffId);
+    if(s && !s.busy && !s.off && !s.assignedPatient){
+      staff = staff.map(x=> x.id===staffId ? {...x, busy:true, part, patient:{id:pid++, name, designated:true}, startedAt:now()} : x);
+      document.getElementById('inName').value='';
+      renderStaff(); saveState();
+      return;
+    }
+    partsData[part].waiting.push({id:pid++, name, arrivedAt: now(), designatedStaff: staffId});
+  } else {
+    partsData[part].waiting.push({id:pid++, name, arrivedAt: now(), designatedStaff: null});
+  }
+  document.getElementById('inName').value='';
+  renderQueues(); renderStaff(); saveState();
+};
+window.bulkAdd = function(){
+  const lines = document.getElementById('bulkArea').value.split('\n').map(l=>l.trim()).filter(Boolean);
+  if(lines.length===0) return;
+  lines.forEach(line=>{
+    const parts_ = line.split(',').map(s=>s.trim());
+    if(parts_.length<2) return;
+    const [part,name,desig] = parts_;
+    if(!['A','B','C','D'].includes(part) || !name) return;
+    const desigId = Number(desig);
+    if(part==='D' && !(desig && desigId>=1 && desigId<=7)) return; // D파트는 지정 직원 필수
+    if(desig && desigId>=1 && desigId<=7){
+      const s = staff.find(x=>x.id===desigId);
+      if(s && !s.busy && !s.off && !s.assignedPatient){
+        staff = staff.map(x=> x.id===desigId ? {...x, busy:true, part, patient:{id:pid++, name, designated:true}, startedAt:now()} : x);
+        return;
+      }
+      partsData[part].waiting.push({id:pid++, name, arrivedAt: now(), designatedStaff: desigId});
+    } else {
+      partsData[part].waiting.push({id:pid++, name, arrivedAt: now(), designatedStaff: null});
+    }
+  });
+  renderQueues(); renderStaff(); saveState();
+};
+
+window.toggleList = function(key){ openLists[key] = !openLists[key]; renderQueues(); };
+
+function renderQueues(){
+  const el = document.getElementById('queues');
+  el.innerHTML = Object.keys(partsData).map(p=>{
+    const q = partsData[p];
+    const open = !!openLists[p];
+    const sel = selected[p];
+    const listHTML = q.waiting.length===0
+      ? '<div class="plempty">대기 환자 없음</div>'
+      : q.waiting.map((pat,i)=>{
+          const isSel = sel.has(pat.id);
+          if(pat.isTeam){
+            return `<div class="prow ${isSel?'selected':''}" onclick="handleRowClick(event,'${p}',${pat.id})">
+              <span class="pn">${i+1}</span>
+              <span class="teambadge">팀</span>
+              <span class="pname">${pat.name}</span>
+              <span class="ptime">${fmtHHMM(pat.arrivedAt)} 내원</span>
+              <button onclick="event.stopPropagation();ungroupTeam('${p}',${pat.id})">해제</button>
+              <button class="assignbtn-row" onclick="event.stopPropagation();openAssignPickerFor('${p}',${pat.id})">배분</button>
+            </div>`;
+          }
+          return `<div class="prow ${isSel?'selected':''}" onclick="handleRowClick(event,'${p}',${pat.id})">
+            <span class="pn">${i+1}</span>
+            <span class="pname">${pat.name}${pat.designatedStaff?` <span class="designatedbadge" style="margin-left:4px;">직원${pat.designatedStaff} 지정</span>`:''}</span>
+            <span class="ptime">${fmtHHMM(pat.arrivedAt)} 내원</span>
+            <button class="assignbtn-row" onclick="event.stopPropagation();openAssignPickerFor('${p}',${pat.id})">배분</button>
+          </div>`;
+        }).join('');
+    const selCount = sel.size;
+    const groupbarHTML = selCount>0 ? `<div class="groupbar">
+        <span>${selCount}명 선택됨</span>
+        ${selCount>=2 ? `<button class="primary" onclick="groupSelected('${p}')">팀으로 묶기</button>` : ''}
+        <button onclick="clearSelection('${p}')">선택 해제</button>
+      </div>` : '';
+    return `<div class="qcard">
+      <div class="head"><span class="qtag ${p}">${p} 파트 · ${PART_LABEL[p]}</span><span class="qmeta">완료 ${q.done.length}</span></div>
+      <div class="typehead" onclick="toggleList('${p}')">
+        <span class="typename">대기 인원 <span style="font-size:10px;">(클릭/배분: 다음 순번 실장에게 자동 배정 · Ctrl+클릭: 동반자 선택)</span></span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="typecount">${q.waiting.length}</span><span class="typename">명</span>
+          <span class="caret ${open?'open':''}">▶</span>
+        </div>
+      </div>
+      <div class="patientlist ${open?'open':''}">${listHTML}${groupbarHTML}</div>
+    </div>`;
+  }).join('');
+}
+
+window.handleRowClick = function(event, part, id){
+  if(event.ctrlKey || event.metaKey){
+    const s = selected[part];
+    if(s.has(id)) s.delete(id); else s.add(id);
+    renderQueues();
+    return;
+  }
+  autoAssignPatient(part, id);
+};
+
+window.openAssignPickerFor = function(part, patientId){
+  autoAssignPatient(part, patientId);
+};
+
+window.autoAssignPatient = function(part, patientId){
+  const q = partsData[part];
+  const idx = q.waiting.findIndex(p=>p.id===patientId);
+  if(idx===-1) return;
+  const pat = q.waiting[idx];
+
+  let staffId;
+  if(pat.designatedStaff){
+    const s = staff.find(x=>x.id===pat.designatedStaff);
+    if(!s || s.busy || s.off || s.assignedPatient){ alert(`지정된 직원 ${pat.designatedStaff}이(가) 지금 바빠서 배정할 수 없습니다. 비면 다시 시도해주세요.`); return; }
+    staffId = s.id;
+  } else {
+    const candidate = queue[part].find(sid=>{
+      const s = staff.find(x=>x.id===sid);
+      return s && !s.busy && !s.off && !s.assignedPatient;
+    });
+    if(!candidate){ alert('지금 배정 가능한 직원이 없습니다.'); return; }
+    staffId = candidate;
+  }
+
+  q.waiting.splice(idx,1);
+  const isDesignatedMatch = !!pat.designatedStaff;
+  if(!isDesignatedMatch){
+    const qi = queue[part].indexOf(staffId);
+    if(qi!==-1) queue[part].splice(qi,1);
+    if(queue[part].length===0){ queue[part] = [...partOrder[part]]; }
+  }
+
+  staff = staff.map(x=> x.id===staffId ? {...x, assignedPatient:{...pat, designated:isDesignatedMatch}, assignedPart:part, lastCompleted:null} : x);
+  renderQueues(); renderStaff(); saveState();
+};
+
+window.groupSelected = function(part){
+  const ids = Array.from(selected[part]);
+  if(ids.length<2){ alert('2명 이상 선택해주세요.'); return; }
+  const q = partsData[part];
+  const chosenWithIdx = [];
+  q.waiting.forEach((pat,i)=>{ if(ids.includes(pat.id)) chosenWithIdx.push({pat,i}); });
+  if(chosenWithIdx.length<2){ selected[part] = new Set(); renderQueues(); return; }
+
+  const insertIdx = Math.min(...chosenWithIdx.map(x=>x.i));
+  const members = chosenWithIdx.map(x=>({id:x.pat.id, name:x.pat.name, arrivedAt:x.pat.arrivedAt}));
+  const earliestArrived = Math.min(...members.map(m=>m.arrivedAt));
+  const team = { id: pid++, isTeam:true, members, name: members.map(m=>m.name).join(' · '), arrivedAt: earliestArrived };
+
+  let newPos = 0;
+  for(let i=0;i<insertIdx;i++){ if(!ids.includes(q.waiting[i].id)) newPos++; }
+  const remaining = q.waiting.filter(pat=>!ids.includes(pat.id));
+  remaining.splice(newPos,0,team);
+  q.waiting = remaining;
+
+  selected[part] = new Set();
+  renderQueues(); saveState();
+};
+
+window.ungroupTeam = function(part, teamId){
+  const q = partsData[part];
+  const idx = q.waiting.findIndex(pat=>pat.id===teamId && pat.isTeam);
+  if(idx===-1) return;
+  const team = q.waiting[idx];
+  const restored = team.members.map(m=>({id:m.id, name:m.name, arrivedAt:m.arrivedAt}));
+  q.waiting.splice(idx,1,...restored);
+  renderQueues(); saveState();
+};
+
+function renderStartPanel(){
+  const el = document.getElementById('startPanel');
+  el.innerHTML = ['A','B','C'].map(p=>{
+    const opts = BASE_ORDER.map(id=>`<option value="${id}" ${partOrder[p][0]===id?'selected':''}>직원 ${id}</option>`).join('');
+    return `<div class="startfield">
+      <label>${p} 파트 (${PART_LABEL[p]}) 시작 직원</label>
+      <select id="startSel_${p}">${opts}</select>
+      <span class="startpreview">순서: ${partOrder[p].join('→')}</span>
+    </div>`;
+  }).join('') + `<button class="startapply" onclick="applyStartOrders()">오늘 순서로 적용</button>`;
+}
+
+window.applyStartOrders = function(){
+  ['A','B','C'].forEach(p=>{
+    const startId = Number(document.getElementById('startSel_'+p).value);
+    partOrder[p] = rotateFrom(startId);
+    queue[p] = [...partOrder[p]];
+  });
+  renderStartPanel(); renderStaff(); saveState();
+};
+
+window.undoSeenPatient = function(staffId, part, patientId){
+  const s = staff.find(x=>x.id===staffId);
+  const rec = s.partPatients[part].find(p=>p.id===patientId);
+  if(!rec) return;
+  if(!confirm(`${rec.name} 님의 ${part}파트 응대 기록을 취소하고 대기열로 되돌릴까요?`)) return;
+
+  const newPartPatients = { ...s.partPatients, [part]: s.partPatients[part].filter(p=>p.id!==patientId) };
+  const newPartDone = { ...s.partDone, [part]: Math.max(0, s.partDone[part]-1) };
+  staff = staff.map(x=> x.id===staffId ? {...x, partPatients:newPartPatients, partDone:newPartDone, doneCount:Math.max(0,x.doneCount-1)} : x);
+
+  partsData[part].done = partsData[part].done.filter(p=>p.id!==patientId);
+  partsData[part].waiting.unshift({...rec});
+
+  log = log.filter(l => !(l.staffId===staffId && l.part===part && l.patient.id===patientId));
+
+  if(!queue[part].includes(staffId)) queue[part].unshift(staffId);
+
+  renderQueues(); renderStaff(); renderStats(); renderLog(); saveState();
+};
+
+function renderDesignatedLog(){
+  const wrap = document.getElementById('desigLogWrap');
+  if(designatedLog.length===0){ wrap.innerHTML = '<div class="empty-log">아직 카운트 제외 상담 기록이 없습니다.</div>'; return; }
+  wrap.innerHTML = `<table>
+    <thead><tr><th>파트</th><th>구분</th><th>환자</th><th>담당 직원</th><th>시작</th><th>종료</th><th>소요</th></tr></thead>
+    <tbody>${designatedLog.map(l=>`
+      <tr>
+        <td><span class="qtag ${l.part}">${l.part}</span></td>
+        <td>${l.reason}</td>
+        <td>${l.name}</td>
+        <td><b>직원 ${l.staffId}</b></td>
+        <td style="font-family:'IBM Plex Mono',monospace;">${fmtClock(l.start)}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;">${fmtClock(l.end)}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;">${fmtElapsed(l.durationMs)}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+let managePanelOpen = false;
+function renderInDesigOptions(){
+  const sel = document.getElementById('inDesig');
+  const prevVal = sel.value;
+  sel.innerHTML = '<option value="">지정 없음</option>' + staff.map(s=>`<option value="${s.id}">직원 ${s.id}</option>`).join('');
+  if(staff.some(s=>String(s.id)===prevVal)) sel.value = prevVal;
+}
+
+window.toggleManagePanel = function(){
+  managePanelOpen = !managePanelOpen;
+  renderManagePanel();
+};
+
+function renderManagePanel(){
+  const wrap = document.getElementById('managePanel');
+  wrap.style.display = managePanelOpen ? 'block' : 'none';
+  if(!managePanelOpen) return;
+  wrap.innerHTML = `<div class="managepanel">
+    ${staff.map(s=>{
+      const statusText = s.busy ? '상담중 (종료 후 삭제 가능)' : (s.off ? '휴무' : '대기 가능');
+      return `<div class="managerow">
+        <span class="mname">직원 ${s.id}</span>
+        <span class="mstatus">${statusText}</span>
+        <button ${s.busy?'disabled':''} onclick="removeStaffMember(${s.id})">퇴사 처리(삭제)</button>
+      </div>`;
+    }).join('')}
+    <div class="manageaddrow">
+      <button onclick="addStaffMember()">＋ 새 직원 추가 (직원 ${nextStaffId})</button>
+    </div>
+  </div>`;
+}
+
+window.addStaffMember = function(){
+  const id = nextStaffId++;
+  staff.push({ id, busy:false, off:false, part:null, patient:null, startedAt:null, sinceAvailable:now(), doneCount:0,
+    partDone:{A:0,B:0,C:0,D:0}, partPatients:{A:[],B:[],C:[],D:[]}, expandedPart:null, assignedPatient:null, assignedPart:null, lastCompleted:null });
+  BASE_ORDER.push(id);
+  ['A','B','C','D'].forEach(p=>{
+    partOrder[p].push(id);
+    queue[p].push(id);
+  });
+  renderManagePanel(); renderStartPanel(); renderStaff(); saveState();
+};
+
+window.removeStaffMember = function(id){
+  const s = staff.find(x=>x.id===id);
+  if(!s) return;
+  if(s.busy || s.assignedPatient){ alert('상담중이거나 배정된 환자가 있는 직원은 처리 후 삭제해주세요.'); return; }
+  if(!confirm(`직원 ${id}을(를) 퇴사 처리하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) return;
+
+  staff = staff.filter(x=>x.id!==id);
+  BASE_ORDER = BASE_ORDER.filter(x=>x!==id);
+  ['A','B','C','D'].forEach(p=>{
+    partOrder[p] = partOrder[p].filter(x=>x!==id);
+    queue[p] = queue[p].filter(x=>x!==id);
+    if(queue[p].length===0 && partOrder[p].length>0){ queue[p] = [...partOrder[p]]; }
+    partsData[p].waiting.forEach(pat=>{ if(pat.designatedStaff===id) pat.designatedStaff = null; });
+  });
+
+  renderManagePanel(); renderStartPanel(); renderQueues(); renderStaff(); saveState();
+};
+
+function renderStaff(){
+  const grid = document.getElementById('staffgrid');
+  grid.innerHTML = staff.map(s=>{
+    const statChips = ['A','B','C','D'].map(p=>`<div class="pstatchip ${s.expandedPart===p?'expanded':''}" onclick="toggleSeenList(${s.id},'${p}')"><span>${p}</span><b>${s.partDone[p]}</b></div>`).join('');
+    const seenListHTML = s.expandedPart ? (()=>{
+      const list = s.partPatients[s.expandedPart];
+      if(list.length===0) return `<div class="seenlist"><div class="seenempty">오늘 ${s.expandedPart}파트 응대 기록 없음</div></div>`;
+      return `<div class="seenlist">${list.map(pt=>`<div class="seenrow"><span>${pt.name}</span><span class="stime">${fmtClock(pt.time)}</span><button class="seen-undo-btn" onclick="undoSeenPatient(${s.id},'${s.expandedPart}',${pt.id})">↺ 되돌리기</button></div>`).join('')}</div>`;
+    })() : '';
+
+    if(s.off){
+      return `<div class="tile off">
+        <div class="toprow"><span class="name">직원 ${s.id}</span><button class="offtoggle isoff" onclick="toggleOff(${s.id})">근무 복귀</button></div>
+        <div class="cur" style="margin-top:6px;">● 오늘 휴무</div>
+        <div class="partstats">${statChips}</div>
+        ${seenListHTML}
+      </div>`;
+    }
+
+    if(s.assignedPatient){
+      return `<div class="tile assigned">
+        <div class="toprow"><span class="name">직원 ${s.id}</span><span class="status" style="color:#3B78C2;">● 배정됨 (상담 대기)</span></div>
+        <button class="undobtn" onclick="undoAssign(${s.id})">↺ 되돌리기 (배정 취소)</button>
+        <div class="cur">${s.assignedPart}(${PART_LABEL[s.assignedPart]}) · ${s.assignedPatient.name}</div>
+        <div class="partstats">${statChips}</div>
+        ${seenListHTML}
+        <button class="assignedbtn" onclick="beginConsult(${s.id})">▶ 상담 들어가기</button>
+      </div>`;
+    }
+
+    if(s.busy){
+      const elapsed = now() - s.startedAt;
+      return `<div class="tile busy">
+        <div class="toprow"><span class="name">직원 ${s.id}</span><span class="status"><span class="dot r"></span>상담중${s.patient.designated?'<span class="designatedbadge">지정</span>':''}</span></div>
+        <button class="undobtn" onclick="undoBegin(${s.id})">↺ 되돌리기 (상담 시작 취소)</button>
+        <div class="timer" onclick="endService(${s.id})" style="cursor:pointer;" title="클릭하면 완료 처리">${fmtElapsed(elapsed)}</div>
+        <div class="cur">${s.part}(${PART_LABEL[s.part]}) · ${s.patient.name}</div>
+        <div class="partstats">${statChips}</div>
+        ${seenListHTML}
+        <div class="partbuttons">
+          ${['A','B','C','D'].map(p=>`<button class="pbtn" style="background:${PART_HEX[p]};opacity:.3;" disabled>${p}</button>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    const idleFor = now() - s.sinceAvailable;
+    const btns = ['A','B','C','D'].map(p=>{
+      const isD = p === 'D';
+      const n = isD ? partsData[p].waiting.filter(pt=>pt.designatedStaff===s.id).length : partsData[p].waiting.length;
+      const onTurn = isD ? false : (queue[p].find(sid => !staff.find(x=>x.id===sid).off) === s.id);
+      return `<button class="pbtn ${onTurn?'onturn':''}" style="background:${PART_HEX[p]};" ${n===0?'disabled':''} onclick="startService(${s.id},'${p}')">${p}</button>`;
+    }).join('');
+
+    return `<div class="tile available">
+      <div class="toprow"><span class="name">직원 ${s.id}</span><button class="offtoggle" onclick="toggleOff(${s.id})">휴무 처리</button></div>
+      <button class="undobtn" ${!s.lastCompleted?'disabled':''} onclick="undoComplete(${s.id})">↺ 되돌리기${s.lastCompleted?` (완료 취소: ${s.lastCompleted.patient.name})`:''}</button>
+      <div class="status" style="margin-top:2px;"><span class="dot g"></span>대기 가능</div>
+      <div class="cur">${fmtElapsed(idleFor)} 쉬는 중</div>
+      <div class="partstats">${statChips}</div>
+      ${seenListHTML}
+      <div class="partbuttons">${btns}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('staffCountTitle').textContent = `직원 현황 (${staff.length}명)`;
+  renderInDesigOptions();
+  if(managePanelOpen) renderManagePanel();
+}
+
+window.toggleSeenList = function(id, part){
+  staff = staff.map(s=> s.id===id ? {...s, expandedPart: s.expandedPart===part ? null : part} : s);
+  renderStaff();
+};
+
+window.toggleOff = function(id){
+  const s = staff.find(x=>x.id===id);
+  if(s.busy || s.assignedPatient){ alert('상담중이거나 배정된 환자가 있는 직원은 처리 후 휴무 처리해주세요.'); return; }
+  staff = staff.map(x=> x.id===id ? {...x, off:!x.off, sinceAvailable:now()} : x);
+  renderStaff(); saveState();
+};
+
+window.startService = function(id, part){
+  const cur = staff.find(x=>x.id===id);
+  if(!cur || cur.busy || cur.assignedPatient || cur.off){ return; }
+  const q = partsData[part];
+  if(q.waiting.length===0){ alert('대기 환자가 없습니다.'); return; }
+
+  const isD = part === 'D';
+  let idx = q.waiting.findIndex(p=>p.designatedStaff===id);
+  const isDesignatedMatch = idx!==-1;
+
+  if(isD){
+    if(!isDesignatedMatch){ alert('경과 환자는 담당(지정) 실장만 볼 수 있습니다.'); return; }
+  } else if(!isDesignatedMatch){
+    idx = q.waiting.findIndex(p=>!p.designatedStaff);
+    if(idx===-1){ alert('지정되지 않은 대기 환자가 없습니다 (남은 인원은 다른 직원에게 지정됨).'); return; }
+  }
+
+  const patient = q.waiting.splice(idx,1)[0];
+
+  if(!isD && !isDesignatedMatch){
+    const qi = queue[part].indexOf(id);
+    if(qi!==-1) queue[part].splice(qi,1);
+    if(queue[part].length===0){ queue[part] = [...partOrder[part]]; }
+  }
+
+  staff = staff.map(s=> s.id===id ? {...s, assignedPatient:{...patient, designated:isDesignatedMatch}, assignedPart:part, lastCompleted:null} : s);
+  renderQueues(); renderStaff(); saveState();
+};
+
+window.beginConsult = function(id){
+  const s = staff.find(x=>x.id===id);
+  if(!s || !s.assignedPatient) return;
+  staff = staff.map(x=> x.id===id ? {...x, busy:true, part:x.assignedPart, patient:x.assignedPatient, assignedPatient:null, assignedPart:null, startedAt:now()} : x);
+  renderStaff(); saveState();
+};
+
+window.endService = function(id){
+  const s = staff.find(x=>x.id===id);
+  const end = now();
+  const durationMs = end - s.startedAt;
+  const isNoCount = s.patient.designated || NO_COUNT_PARTS.includes(s.part);
+
+  if(isNoCount){
+    const reason = s.patient.designated ? '지정' : PART_LABEL[s.part];
+    designatedLog.unshift({staffId:id, part:s.part, name:s.patient.name, start:s.startedAt, end, durationMs, reason});
+    staff = staff.map(x=> x.id===id ? {...x, busy:false, part:null, patient:null, startedAt:null, sinceAvailable:now(),
+      lastCompleted:{part:s.part, patient:s.patient, wasDesignated:true}} : x);
+    renderQueues(); renderStaff(); renderDesignatedLog(); saveState();
+    return;
+  }
+
+  log.unshift({staffId:id, part:s.part, patient:s.patient, start:s.startedAt, end, durationMs});
+  partsData[s.part].done.push(s.patient);
+  const newPartDone = {...s.partDone, [s.part]: s.partDone[s.part]+1};
+  const newPartPatients = {...s.partPatients, [s.part]: [...s.partPatients[s.part], {...s.patient, time:end}]};
+  staff = staff.map(x=> x.id===id ? {...x, busy:false, part:null, patient:null, startedAt:null, sinceAvailable:now(),
+    doneCount:x.doneCount+1, partDone:newPartDone, partPatients:newPartPatients,
+    lastCompleted:{part:s.part, patient:s.patient, wasDesignated:false}} : x);
+  renderQueues(); renderStaff(); renderStats(); renderLog(); saveState();
+};
+
+window.undoAssign = function(id){
+  const s = staff.find(x=>x.id===id);
+  if(!s || !s.assignedPatient) return;
+  const part = s.assignedPart;
+  const patient = s.assignedPatient;
+  if(!patient.designated){
+    if(!queue[part].includes(id)) queue[part].unshift(id);
+  }
+  partsData[part].waiting.unshift({...patient});
+  staff = staff.map(x=> x.id===id ? {...x, assignedPatient:null, assignedPart:null, sinceAvailable:now()} : x);
+  renderQueues(); renderStaff(); saveState();
+};
+
+window.undoBegin = function(id){
+  const s = staff.find(x=>x.id===id);
+  if(!s || !s.busy) return;
+  staff = staff.map(x=> x.id===id ? {...x, busy:false, assignedPatient:x.patient, assignedPart:x.part, patient:null, part:null, startedAt:null} : x);
+  renderStaff(); saveState();
+};
+
+window.undoComplete = function(id){
+  const s = staff.find(x=>x.id===id);
+  if(!s || !s.lastCompleted) return;
+  const { part, patient, wasDesignated } = s.lastCompleted;
+
+  if(wasDesignated){
+    const di = designatedLog.findIndex(l=>l.staffId===id && l.part===part && l.name===patient.name);
+    if(di!==-1) designatedLog.splice(di,1);
+    partsData[part].waiting.unshift({...patient});
+    staff = staff.map(x=> x.id===id ? {...x, lastCompleted:null} : x);
+    renderQueues(); renderStaff(); renderDesignatedLog(); saveState();
+    return;
+  }
+
+  const newPartPatients = { ...s.partPatients, [part]: s.partPatients[part].filter(p=>p.id!==patient.id) };
+  const newPartDone = { ...s.partDone, [part]: Math.max(0, s.partDone[part]-1) };
+  partsData[part].done = partsData[part].done.filter(p=>p.id!==patient.id);
+  partsData[part].waiting.unshift({...patient});
+  log = log.filter(l => !(l.staffId===id && l.part===part && l.patient.id===patient.id));
+  if(!queue[part].includes(id)) queue[part].unshift(id);
+
+  staff = staff.map(x=> x.id===id ? {...x, partPatients:newPartPatients, partDone:newPartDone, doneCount:Math.max(0,x.doneCount-1), lastCompleted:null} : x);
+  renderQueues(); renderStaff(); renderStats(); renderLog(); saveState();
+};
+
+function renderStats(){
+  const total = staff.reduce((s,x)=>s+x.doneCount,0);
+  let totalWaiting=0;
+  Object.keys(partsData).forEach(p=>{ totalWaiting+=partsData[p].waiting.length; });
+  const durs = log.map(l=>l.durationMs);
+  const avg = durs.length ? Math.round(durs.reduce((a,b)=>a+b,0)/durs.length/1000/60*10)/10 : 0;
+  const counts = staff.map(s=>s.doneCount);
+  const dev = counts.length? Math.max(...counts)-Math.min(...counts) : 0;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="v">${total}</div><div class="l">총 응대 완료</div></div>
+    <div class="stat"><div class="v">${totalWaiting}</div><div class="l">전체 대기 인원</div></div>
+    <div class="stat"><div class="v">${avg}분</div><div class="l">평균 응대 시간</div></div>
+    <div class="stat"><div class="v">${dev}</div><div class="l">직원 간 처리건수 편차</div></div>
+  `;
+}
+
+function renderLog(){
+  const wrap = document.getElementById('logwrap');
+  if(log.length===0){ wrap.innerHTML = '<div class="empty-log">아직 완료된 응대가 없습니다.</div>'; return; }
+  wrap.innerHTML = `<table>
+    <thead><tr><th>파트</th><th>구분</th><th>환자</th><th>담당 직원</th><th>시작</th><th>종료</th><th>소요</th></tr></thead>
+    <tbody>${log.map(l=>`
+      <tr>
+        <td><span class="qtag ${l.part}">${l.part}</span></td>
+        <td>${PART_LABEL[l.part]}</td>
+        <td>${l.patient.name}</td>
+        <td><b>직원 ${l.staffId}</b></td>
+        <td style="font-family:'IBM Plex Mono',monospace;">${fmtClock(l.start)}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;">${fmtClock(l.end)}</td>
+        <td style="font-family:'IBM Plex Mono',monospace;">${fmtElapsed(l.durationMs)}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+let suppressSave = false; // 원격 변경 반영 중에는 재저장 방지
+
+function saveState(){
+  if(suppressSave) return;
+  const snapshot = { staff, partsData, queue, partOrder, log, designatedLog, pid, nextStaffId, BASE_ORDER, updatedAt: Date.now() };
+  boardRef.set(snapshot).catch(e=>{ console.error('저장 실패', e); setSyncStatus('저장 실패 (네트워크 확인)', true); });
+}
+
+function loadState(data){
+  suppressSave = true;
+  staff = data.staff || staff;
+  partsData = data.partsData || partsData;
+  queue = data.queue || queue;
+  partOrder = data.partOrder || partOrder;
+  log = data.log || log;
+  designatedLog = data.designatedLog || designatedLog;
+  pid = data.pid || pid;
+  nextStaffId = data.nextStaffId || nextStaffId;
+  BASE_ORDER = data.BASE_ORDER || BASE_ORDER;
+  renderQueues(); renderStartPanel(); renderStaff(); renderStats(); renderLog(); renderDesignatedLog();
+  suppressSave = false;
+  setSyncStatus('실시간 동기화 중', false);
+}
+
+function setSyncStatus(text, isError){
+  const el = document.getElementById('syncStatus');
+  if(!el) return;
+  el.textContent = text;
+  el.style.color = isError ? 'var(--busy)' : 'var(--ok)';
+}
+
+boardRef.get().then(doc=>{
+  if(doc.exists){
+    loadState(doc.data());
+  } else {
+    seedDemo();
+    renderQueues(); renderStartPanel(); renderStaff(); renderStats(); renderLog(); renderDesignatedLog();
+    saveState();
+    setSyncStatus('실시간 동기화 중', false);
+  }
+  boardRef.onSnapshot(snap=>{
+    if(snap.exists) loadState(snap.data());
+  }, err=>{ console.error(err); setSyncStatus('연결 끊김', true); });
+}).catch(e=>{
+  console.error('Firebase 연결 실패, 로컬 모드로 실행', e);
+  seedDemo();
+  renderQueues(); renderStartPanel(); renderStaff(); renderStats(); renderLog(); renderDesignatedLog();
+  setSyncStatus('오프라인(로컬만 저장)', true);
+});
+
+setInterval(()=>{ renderStaff(); }, 1000);
+</script>
