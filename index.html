@@ -41,6 +41,12 @@
 
   .queues{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px;}
   .qcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
+  .qcard.part-paused{border-color:#1B1F27;background:#F2F2F2;}
+  .partpausebtn{font-size:10px;padding:4px 8px;border:1px solid var(--line);background:#fff;color:var(--sub);border-radius:5px;cursor:pointer;font-weight:600;}
+  .partpausebtn:hover{background:#F0F1F3;}
+  .partpausebtn.on{background:#1B1F27;color:#fff;border-color:#1B1F27;}
+  .partpausebanner{background:#1B1F27;color:#fff;font-size:11px;font-weight:600;padding:6px 10px;border-radius:6px;margin:8px 0;text-align:center;}
+  .pbtn.part-held{opacity:.4;}
   .qcard .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
   .qtag{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;padding:2px 8px;border-radius:5px;}
   .qtag.A{background:var(--a-bg);color:var(--a);} .qtag.B{background:var(--b-bg);color:var(--b);} .qtag.C{background:var(--c-bg);color:var(--c);} .qtag.D{background:var(--d-bg);color:var(--d);}
@@ -50,12 +56,18 @@
   .typecount{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;}
   .patientlist{max-height:136px;overflow-y:auto;margin-top:8px;border-top:1px dashed var(--line);}
   .prow{display:flex;align-items:center;gap:6px;padding:5px 2px;font-size:12px;border-bottom:1px solid var(--line);cursor:pointer;}
+  .prow.paused{background:#F2F2F2;}
+  .pausedot{width:12px;height:12px;border-radius:50%;border:2px solid var(--sub);flex:none;cursor:pointer;background:#fff;}
+  .pausedot:hover{border-color:var(--ink);}
+  .pausedot.on{background:#1B1F27;border-color:#1B1F27;}
   .prow.selected{background:#EEE9FB;}
   .teambadge{font-size:9px;background:#7C4DBF;color:#fff;padding:1px 5px;border-radius:4px;flex:none;}
   .groupbar{display:flex;align-items:center;gap:8px;padding:6px 2px;font-size:11px;color:var(--sub);border-top:1px dashed var(--line);margin-top:4px;}
   .groupbar button{font-size:10.5px;padding:3px 8px;border:1px solid var(--line);border-radius:5px;background:#fff;cursor:pointer;font-weight:600;}
   .groupbar button.primary{background:#7C4DBF;color:#fff;border-color:#7C4DBF;}
   .prow .pname{flex:1;}
+  .prow .pname.wait-20{color:#2F5D82;font-weight:700;}
+  .prow .pname.wait-30{color:#C0433A;font-weight:700;}
   .prow .ptime{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--sub);}
   .prow .pn{font-family:'IBM Plex Mono',monospace;color:var(--sub);font-size:10.5px;width:20px;}
   .prow button{font-size:10.5px;padding:2px 6px;border:1px solid var(--line);border-radius:4px;background:#fff;color:var(--busy);cursor:pointer;}
@@ -147,6 +159,18 @@
   .pagetab{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--sub);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;cursor:pointer;}
   .pagetab:hover{background:#F0F1F3;}
   .pagetab.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .automodebtn{margin-left:auto;height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--sub);font-weight:700;font-size:12.5px;cursor:pointer;}
+  .automodebtn:hover{background:#F0F1F3;}
+  .automodebtn.on{background:#2F7A5D;color:#fff;border-color:#2F7A5D;}
+  .stuckwarning{background:#FBEAE8;border:1px solid #C0433A;color:#C0433A;font-size:12.5px;font-weight:600;padding:9px 14px;border-radius:8px;margin-bottom:16px;}
+  td.mono, th.mono{font-family:'IBM Plex Mono',monospace;}
+  .perfstaffblock{padding:8px 2px;border-bottom:1px solid var(--line);}
+  .perfstaffblock:last-child{border-bottom:none;}
+  .perfstaffhead{font-size:12.5px;font-weight:700;margin-bottom:5px;}
+  .perfcount{font-weight:500;color:var(--sub);font-size:11px;margin-left:4px;}
+  .perfnamewrap{display:flex;flex-wrap:wrap;gap:6px;}
+  .perfname{font-size:11.5px;background:#FAFBFC;border:1px solid var(--line);border-radius:5px;padding:3px 8px;}
+  .perftime{font-family:'IBM Plex Mono',monospace;color:var(--sub);font-size:10px;}
 </style>
 
 <div class="wrap">
@@ -156,7 +180,10 @@
   <div class="pagetabs">
     <button class="pagetab active" id="tabBtn1" onclick="showPage(1)">1</button>
     <button class="pagetab" id="tabBtn2" onclick="showPage(2)">2</button>
+    <button class="pagetab" id="tabBtn3" onclick="showPage(3)">3</button>
+    <button class="automodebtn" id="autoModeBtn" onclick="toggleAutoMode()">자동배정 모드: OFF</button>
   </div>
+  <div id="stuckWarning" class="stuckwarning" style="display:none;"></div>
 
   <div id="page1">
     <div class="section-title">환자 등록</div>
@@ -199,6 +226,14 @@
     <div class="section-title">카운트 제외 상담 기록 (지정 · 경과)</div>
     <div id="desigLogWrap"></div>
   </div>
+
+  <div id="page3" style="display:none;">
+    <div class="section-title">오늘의 직원별 실적</div>
+    <div id="perfSummary"></div>
+
+    <div class="section-title">파트별 상세 명단</div>
+    <div id="perfDetail"></div>
+  </div>
 </div>
 
 <script>
@@ -219,6 +254,8 @@ let pid = 1;
 function mkQueue(){ return {waiting:[], done:[]}; }
 let partsData = { A: mkQueue(), B: mkQueue(), C: mkQueue(), D: mkQueue() };
 let selected = { A:new Set(), B:new Set(), C:new Set(), D:new Set() }; // 동반자(팀) 묶기용 선택 상태
+let partPaused = { A:false, B:false, C:false, D:false }; // 파트 전체 홀드 상태 (예: 원장님 수술중이라 A/C 배정 불가)
+let autoMode = false; // true면 파트 구분 없이 등록 순서대로 자동 배정
 
 let staff = BASE_ORDER.map(id=>({
   id, busy:false, off:false, part:null, patient:null, startedAt:null, sinceAvailable:now(), doneCount:0,
@@ -250,12 +287,13 @@ window.addPatientUI = function(){
       renderStaff(); saveState();
       return;
     }
-    partsData[part].waiting.push({id:pid++, name, arrivedAt: now(), designatedStaff: staffId});
+    partsData[part].waiting.push({id:pid++, name, arrivedAt: now(), designatedStaff: staffId, paused:false});
   } else {
-    partsData[part].waiting.push({id:pid++, name, arrivedAt: now(), designatedStaff: null});
+    partsData[part].waiting.push({id:pid++, name, arrivedAt: now(), designatedStaff: null, paused:false});
   }
   document.getElementById('inName').value='';
   renderQueues(); renderStaff(); saveState();
+  runAutoDispatch();
 };
 
 
@@ -268,19 +306,24 @@ function renderQueues(){
       ? '<div class="plempty">대기 환자 없음</div>'
       : q.waiting.map((pat,i)=>{
           const isSel = sel.has(pat.id);
+          const waitMin = (now() - pat.arrivedAt) / 60000;
+          const waitClass = waitMin>=30 ? 'wait-30' : (waitMin>=20 ? 'wait-20' : '');
+          const pauseDot = `<span class="pausedot ${pat.paused?'on':''}" title="홀드(포즈): 클릭하면 이 환자는 다른 사람보다 나중에 배정됩니다" onclick="event.stopPropagation();togglePause('${p}',${pat.id})"></span>`;
           if(pat.isTeam){
-            return `<div class="prow ${isSel?'selected':''}" onclick="handleRowClick(event,'${p}',${pat.id})">
+            return `<div class="prow ${isSel?'selected':''} ${pat.paused?'paused':''}" onclick="handleRowClick(event,'${p}',${pat.id})">
               <span class="pn">${i+1}</span>
+              ${pauseDot}
               <span class="teambadge">팀</span>
-              <span class="pname">${pat.name}</span>
+              <span class="pname ${waitClass}">${pat.name}</span>
               <span class="ptime">${fmtHHMM(pat.arrivedAt)} 내원</span>
               <button onclick="event.stopPropagation();ungroupTeam('${p}',${pat.id})">해제</button>
               <button class="assignbtn-row" onclick="event.stopPropagation();openAssignPickerFor('${p}',${pat.id})">배분</button>
             </div>`;
           }
-          return `<div class="prow ${isSel?'selected':''}" onclick="handleRowClick(event,'${p}',${pat.id})">
+          return `<div class="prow ${isSel?'selected':''} ${pat.paused?'paused':''}" onclick="handleRowClick(event,'${p}',${pat.id})">
             <span class="pn">${i+1}</span>
-            <span class="pname">${pat.name}${pat.designatedStaff?` <span class="designatedbadge" style="margin-left:4px;">직원${pat.designatedStaff} 지정</span>`:''}</span>
+            ${pauseDot}
+            <span class="pname ${waitClass}">${pat.name}</span>${pat.designatedStaff?` <span class="designatedbadge" style="margin-left:-2px;">직원${pat.designatedStaff} 지정</span>`:''}
             <span class="ptime">${fmtHHMM(pat.arrivedAt)} 내원</span>
             <button class="assignbtn-row" onclick="event.stopPropagation();openAssignPickerFor('${p}',${pat.id})">배분</button>
           </div>`;
@@ -291,8 +334,13 @@ function renderQueues(){
         ${selCount>=2 ? `<button class="primary" onclick="groupSelected('${p}')">팀으로 묶기</button>` : ''}
         <button onclick="clearSelection('${p}')">선택 해제</button>
       </div>` : '';
-    return `<div class="qcard">
-      <div class="head"><span class="qtag ${p}">${p} 파트 · ${PART_LABEL[p]}</span><span class="qmeta">완료 ${q.done.length}</span></div>
+    return `<div class="qcard ${partPaused[p]?'part-paused':''}">
+      <div class="head">
+        <span class="qtag ${p}">${p} 파트 · ${PART_LABEL[p]}</span>
+        <button class="partpausebtn ${partPaused[p]?'on':''}" onclick="togglePartPause('${p}')" title="파트 전체 홀드">⏸ ${partPaused[p]?'파트 홀드중':'파트 홀드'}</button>
+        <span class="qmeta">완료 ${q.done.length}</span>
+      </div>
+      ${partPaused[p] ? `<div class="partpausebanner">⏸ 이 파트는 지금 전체 홀드 중입니다 — 배정이 되지 않습니다</div>` : ''}
       <div class="typehead">
         <span class="typename">대기 인원 <span style="font-size:10px;">(클릭/배분: 다음 순번 실장에게 자동 배정 · Ctrl+클릭: 동반자 선택)</span></span>
         <div style="display:flex;align-items:center;gap:6px;">
@@ -303,6 +351,97 @@ function renderQueues(){
     </div>`;
   }).join('');
 }
+
+window.toggleAutoMode = function(){
+  autoMode = !autoMode;
+  renderAutoModeButton();
+  saveState();
+  if(autoMode) runAutoDispatch();
+};
+
+function renderAutoModeButton(){
+  const btn = document.getElementById('autoModeBtn');
+  if(!btn) return;
+  btn.textContent = `자동배정 모드: ${autoMode ? 'ON' : 'OFF'}`;
+  btn.classList.toggle('on', autoMode);
+}
+
+function runAutoDispatch(){
+  if(!autoMode) return;
+  let changed = false;
+  let safety = 0;
+  while(safety++ < 300){
+    const availableStaff = staff.filter(s=>!s.busy && !s.off && !s.assignedPatient);
+    if(availableStaff.length===0) break;
+
+    let best = null; // {part, idx, patient, staffId}
+    ['A','B','C','D'].forEach(part=>{
+      if(partPaused[part]) return;
+      partsData[part].waiting.forEach((pat,idx)=>{
+        if(pat.paused) return;
+        let targetStaffId = null;
+        if(pat.designatedStaff){
+          const s = availableStaff.find(x=>x.id===pat.designatedStaff);
+          if(!s) return; // 지정된 직원이 지금 비어있지 않으면 이 환자는 건너뜀
+          targetStaffId = s.id;
+        }
+        if(!best || pat.arrivedAt < best.patient.arrivedAt){
+          best = { part, idx, patient: pat, staffId: targetStaffId };
+        }
+      });
+    });
+    if(!best) break;
+
+    let staffId = best.staffId;
+    if(!staffId){
+      staffId = availableStaff.reduce((a,b)=> a.sinceAvailable<=b.sinceAvailable ? a : b).id;
+    }
+
+    const q = partsData[best.part];
+    const patient = q.waiting.splice(best.idx,1)[0];
+    const isDesignatedMatch = !!patient.designatedStaff;
+    staff = staff.map(x=> x.id===staffId ? {...x, assignedPatient:{...patient, designated:isDesignatedMatch}, assignedPart:best.part, lastCompleted:null} : x);
+    changed = true;
+  }
+  if(changed){ renderQueues(); renderStaff(); saveState(); }
+
+  // 15분 넘게 배정 안 된 환자가 있으면 경고만 표시 — 모드 전환은 어레인지가 직접 판단해서 버튼으로 결정
+  const STUCK_MIN = 30;
+  let stuckPatientName = null;
+  ['A','B','C','D'].some(part=>{
+    if(partPaused[part]) return false;
+    const hit = partsData[part].waiting.find(pat=>{
+      if(pat.paused) return false;
+      return (now()-pat.arrivedAt)/60000 >= STUCK_MIN;
+    });
+    if(hit){ stuckPatientName = hit.name; return true; }
+    return false;
+  });
+  renderStuckWarning(stuckPatientName);
+}
+
+function renderStuckWarning(name){
+  const el = document.getElementById('stuckWarning');
+  if(!el) return;
+  if(name){
+    el.style.display = 'block';
+    el.textContent = `⚠ "${name}" 님이 15분 넘게 자동배정되지 못하고 있습니다 — 필요하면 수동으로 직접 배정하거나 자동배정 모드를 꺼주세요.`;
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+window.togglePartPause = function(part){
+  partPaused[part] = !partPaused[part];
+  renderQueues(); renderStaff(); saveState();
+};
+
+window.togglePause = function(part, patientId){
+  const pat = partsData[part].waiting.find(p=>p.id===patientId);
+  if(!pat) return;
+  pat.paused = !pat.paused;
+  renderQueues(); saveState();
+};
 
 window.handleRowClick = function(event, part, id){
   if(event.ctrlKey || event.metaKey){
@@ -319,10 +458,12 @@ window.openAssignPickerFor = function(part, patientId){
 };
 
 window.autoAssignPatient = function(part, patientId){
+  if(partPaused[part]){ alert(`${PART_LABEL[part]}(${part}) 파트는 지금 전체 홀드 중이라 배정할 수 없습니다.`); return; }
   const q = partsData[part];
   const idx = q.waiting.findIndex(p=>p.id===patientId);
   if(idx===-1) return;
   const pat = q.waiting[idx];
+  if(pat.paused){ alert('이 환자는 홀드(포즈) 상태입니다. 먼저 동그라미를 눌러 홀드를 해제해주세요.'); return; }
 
   let staffId;
   if(pat.designatedStaff){
@@ -430,7 +571,7 @@ window.undoSeenPatient = function(staffId, part, patientId){
 
   if(!queue[part].includes(staffId)) queue[part].unshift(staffId);
 
-  renderQueues(); renderStaff(); renderStats(); renderLog(); saveState();
+  renderQueues(); renderStaff(); renderStats(); renderPerformanceReport(); renderLog(); saveState();
 };
 
 function renderDesignatedLog(){
@@ -463,8 +604,10 @@ function renderInDesigOptions(){
 window.showPage = function(n){
   document.getElementById('page1').style.display = n===1 ? 'block' : 'none';
   document.getElementById('page2').style.display = n===2 ? 'block' : 'none';
+  document.getElementById('page3').style.display = n===3 ? 'block' : 'none';
   document.getElementById('tabBtn1').classList.toggle('active', n===1);
   document.getElementById('tabBtn2').classList.toggle('active', n===2);
+  document.getElementById('tabBtn3').classList.toggle('active', n===3);
 };
 
 window.toggleManagePanel = function(){
@@ -526,8 +669,9 @@ function renderStaff(){
   grid.innerHTML = staff.map(s=>{
     const statChips = ['A','B','C','D'].map(p=>`<div class="pstatchip ${s.expandedPart===p?'expanded':''}" onclick="toggleSeenList(${s.id},'${p}')"><span>${p}</span><b>${s.partDone[p]}</b></div>`).join('');
     const seenListHTML = s.expandedPart ? (()=>{
-      const list = s.partPatients[s.expandedPart];
-      if(list.length===0) return `<div class="seenlist"><div class="seenempty">오늘 ${s.expandedPart}파트 응대 기록 없음</div></div>`;
+      const full = s.partPatients[s.expandedPart];
+      if(full.length===0) return `<div class="seenlist"><div class="seenempty">오늘 ${s.expandedPart}파트 응대 기록 없음</div></div>`;
+      const list = full.slice(-2); // 되돌리기는 최근 2명 이상 거슬러 쓸 일이 없으므로 최근 2명만 표시 (전체 명단은 3페이지 실적 참고)
       return `<div class="seenlist">${list.map(pt=>`<div class="seenrow"><span>${pt.name}</span><span class="stime">${fmtClock(pt.time)}</span><button class="seen-undo-btn" onclick="undoSeenPatient(${s.id},'${s.expandedPart}',${pt.id})">↺ 되돌리기</button></div>`).join('')}</div>`;
     })() : '';
 
@@ -571,7 +715,8 @@ function renderStaff(){
       const isD = p === 'D';
       const n = isD ? partsData[p].waiting.filter(pt=>pt.designatedStaff===s.id).length : partsData[p].waiting.length;
       const onTurn = isD ? false : (queue[p].find(sid => !staff.find(x=>x.id===sid).off) === s.id);
-      return `<button class="pbtn ${onTurn?'onturn':''}" style="background:${PART_HEX[p]};" ${n===0?'disabled':''} onclick="startService(${s.id},'${p}')">${p}</button>`;
+      const isPaused = partPaused[p];
+      return `<button class="pbtn ${onTurn?'onturn':''} ${isPaused?'part-held':''}" style="background:${PART_HEX[p]};" ${(n===0||isPaused)?'disabled':''} title="${isPaused?'파트 홀드중':''}" onclick="startService(${s.id},'${p}')">${isPaused?'⏸':p}</button>`;
     }).join('');
 
     return `<div class="tile available">
@@ -604,18 +749,19 @@ window.toggleOff = function(id){
 window.startService = function(id, part){
   const cur = staff.find(x=>x.id===id);
   if(!cur || cur.busy || cur.assignedPatient || cur.off){ return; }
+  if(partPaused[part]){ return; }
   const q = partsData[part];
   if(q.waiting.length===0){ alert('대기 환자가 없습니다.'); return; }
 
   const isD = part === 'D';
-  let idx = q.waiting.findIndex(p=>p.designatedStaff===id);
+  let idx = q.waiting.findIndex(p=>p.designatedStaff===id && !p.paused);
   const isDesignatedMatch = idx!==-1;
 
   if(isD){
     if(!isDesignatedMatch){ alert('경과 환자는 담당(지정) 실장만 볼 수 있습니다.'); return; }
   } else if(!isDesignatedMatch){
-    idx = q.waiting.findIndex(p=>!p.designatedStaff);
-    if(idx===-1){ alert('지정되지 않은 대기 환자가 없습니다 (남은 인원은 다른 직원에게 지정됨).'); return; }
+    idx = q.waiting.findIndex(p=>!p.designatedStaff && !p.paused);
+    if(idx===-1){ alert('지정되지 않은 대기 환자가 없습니다 (남은 인원은 홀드 중이거나 다른 직원에게 지정됨).'); return; }
   }
 
   const patient = q.waiting.splice(idx,1)[0];
@@ -649,6 +795,7 @@ window.endService = function(id){
     staff = staff.map(x=> x.id===id ? {...x, busy:false, part:null, patient:null, startedAt:null, sinceAvailable:now(),
       lastCompleted:{part:s.part, patient:s.patient, wasDesignated:true}} : x);
     renderQueues(); renderStaff(); renderDesignatedLog(); saveState();
+    runAutoDispatch();
     return;
   }
 
@@ -659,7 +806,8 @@ window.endService = function(id){
   staff = staff.map(x=> x.id===id ? {...x, busy:false, part:null, patient:null, startedAt:null, sinceAvailable:now(),
     doneCount:x.doneCount+1, partDone:newPartDone, partPatients:newPartPatients,
     lastCompleted:{part:s.part, patient:s.patient, wasDesignated:false}} : x);
-  renderQueues(); renderStaff(); renderStats(); renderLog(); saveState();
+  renderQueues(); renderStaff(); renderStats(); renderPerformanceReport(); renderLog(); saveState();
+  runAutoDispatch();
 };
 
 window.undoAssign = function(id){
@@ -704,8 +852,42 @@ window.undoComplete = function(id){
   if(!queue[part].includes(id)) queue[part].unshift(id);
 
   staff = staff.map(x=> x.id===id ? {...x, partPatients:newPartPatients, partDone:newPartDone, doneCount:Math.max(0,x.doneCount-1), lastCompleted:null} : x);
-  renderQueues(); renderStaff(); renderStats(); renderLog(); saveState();
+  renderQueues(); renderStaff(); renderStats(); renderPerformanceReport(); renderLog(); saveState();
 };
+
+function renderPerformanceReport(){
+  const summaryEl = document.getElementById('perfSummary');
+  const detailEl = document.getElementById('perfDetail');
+  if(!summaryEl || !detailEl) return;
+
+  const parts = ['A','B','C','D'];
+  summaryEl.innerHTML = `<table>
+    <thead><tr><th>직원</th>${parts.map(p=>`<th>${p}(${PART_LABEL[p]})</th>`).join('')}<th>총 실적(카운트 기준)</th></tr></thead>
+    <tbody>${staff.map(s=>`
+      <tr>
+        <td><b>직원 ${s.id}</b></td>
+        ${parts.map(p=>`<td class="mono">${s.partDone[p]}</td>`).join('')}
+        <td class="mono"><b>${s.doneCount}</b></td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+
+  detailEl.innerHTML = parts.map(p=>{
+    const rows = staff.map(s=>{
+      const list = s.partPatients[p];
+      if(list.length===0) return '';
+      return `<div class="perfstaffblock">
+        <div class="perfstaffhead">직원 ${s.id} <span class="perfcount">${list.length}명</span></div>
+        <div class="perfnamewrap">${list.map(pt=>`<span class="perfname">${pt.name} <span class="perftime">${fmtClock(pt.time)}</span></span>`).join('')}</div>
+      </div>`;
+    }).join('');
+    const hasAny = staff.some(s=>s.partPatients[p].length>0);
+    return `<div class="qcard" style="margin-bottom:12px;">
+      <div class="head"><span class="qtag ${p}">${p} 파트 · ${PART_LABEL[p]}</span></div>
+      ${hasAny ? rows : '<div class="empty-log">오늘 기록 없음</div>'}
+    </div>`;
+  }).join('');
+}
 
 function renderStats(){
   const total = staff.reduce((s,x)=>s+x.doneCount,0);
@@ -746,7 +928,7 @@ let suppressSave = false; // 원격 변경 반영 중에는 재저장 방지
 
 function saveState(){
   if(suppressSave) return;
-  const snapshot = { staff, partsData, queue, partOrder, log, designatedLog, pid, nextStaffId, BASE_ORDER, lastResetDate, updatedAt: Date.now() };
+  const snapshot = { staff, partsData, queue, partOrder, log, designatedLog, pid, nextStaffId, BASE_ORDER, lastResetDate, partPaused, autoMode, updatedAt: Date.now() };
   boardRef.set(snapshot).catch(e=>{ console.error('저장 실패', e); setSyncStatus('저장 실패 (네트워크 확인)', true); });
 }
 
@@ -762,7 +944,10 @@ function loadState(data){
   nextStaffId = data.nextStaffId || nextStaffId;
   BASE_ORDER = data.BASE_ORDER || BASE_ORDER;
   lastResetDate = data.lastResetDate || lastResetDate;
-  renderQueues(); renderStartPanel(); renderStaff(); renderStats(); renderLog(); renderDesignatedLog();
+  partPaused = data.partPaused || partPaused;
+  autoMode = (data.autoMode !== undefined) ? data.autoMode : autoMode;
+  renderQueues(); renderStartPanel(); renderStaff(); renderStats(); renderPerformanceReport(); renderLog(); renderDesignatedLog();
+  renderAutoModeButton();
   suppressSave = false;
   setSyncStatus('실시간 동기화 중', false);
   checkDailyReset();
@@ -787,7 +972,7 @@ function performReset(){
     assignedPatient:null, assignedPart:null, lastCompleted:null
   }));
   lastResetDate = todayStr();
-  renderQueues(); renderStartPanel(); renderStaff(); renderStats(); renderLog(); renderDesignatedLog();
+  renderQueues(); renderStartPanel(); renderStaff(); renderStats(); renderPerformanceReport(); renderLog(); renderDesignatedLog();
   saveState();
 }
 
@@ -821,7 +1006,8 @@ boardRef.get().then(doc=>{
     loadState(doc.data());
   } else {
     lastResetDate = todayStr();
-    renderQueues(); renderStartPanel(); renderStaff(); renderStats(); renderLog(); renderDesignatedLog();
+    renderQueues(); renderStartPanel(); renderStaff(); renderStats(); renderPerformanceReport(); renderLog(); renderDesignatedLog();
+    renderAutoModeButton();
     saveState();
     setSyncStatus('실시간 동기화 중', false);
   }
@@ -832,11 +1018,12 @@ boardRef.get().then(doc=>{
 }).catch(e=>{
   console.error('Firebase 연결 실패, 로컬 모드로 실행', e);
   lastResetDate = todayStr();
-  renderQueues(); renderStartPanel(); renderStaff(); renderStats(); renderLog(); renderDesignatedLog();
+  renderQueues(); renderStartPanel(); renderStaff(); renderStats(); renderPerformanceReport(); renderLog(); renderDesignatedLog();
+  renderAutoModeButton();
   setSyncStatus('오프라인(로컬만 저장)', true);
   checkManualResetParam();
 });
 
-setInterval(()=>{ renderStaff(); }, 1000);
+setInterval(()=>{ renderStaff(); renderQueues(); runAutoDispatch(); }, 1000);
 setInterval(()=>{ checkDailyReset(); }, 60000); // 1분마다 날짜가 바뀌었는지 확인
 </script>
