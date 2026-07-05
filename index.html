@@ -778,4 +778,73 @@ function loadState(data){
 
 function todayStr(){
   const d = new Date();
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padSt
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function performReset(){
+  ['A','B','C','D'].forEach(p=>{
+    partsData[p] = { waiting:[], done:[] };
+    partOrder[p] = rotateFrom(1);
+    queue[p] = [...partOrder[p]];
+  });
+  log = [];
+  designatedLog = [];
+  staff = staff.map(s=>({
+    ...s, busy:false, off:false, part:null, patient:null, startedAt:null, sinceAvailable:now(), doneCount:0,
+    partDone:{A:0,B:0,C:0,D:0}, partPatients:{A:[],B:[],C:[],D:[]}, expandedPart:null,
+    assignedPatient:null, assignedPart:null, lastCompleted:null
+  }));
+  lastResetDate = todayStr();
+  renderQueues(); renderStartPanel(); renderStaff(); renderStats(); renderLog(); renderDesignatedLog();
+  saveState();
+}
+
+function checkDailyReset(){
+  if(lastResetDate === todayStr()) return;
+  performReset();
+}
+
+function checkManualResetParam(){
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('reset') === 'yes'){
+    if(confirm('지금 전체 데이터를 0으로 초기화할까요? (대기열/완료기록/처리건수 전부 리셋, 직원 명단은 유지)')){
+      performReset();
+      alert('초기화되었습니다.');
+    }
+    params.delete('reset');
+    const newUrl = window.location.pathname + (params.toString() ? '?'+params.toString() : '');
+    window.history.replaceState({}, '', newUrl);
+  }
+}
+
+function setSyncStatus(text, isError){
+  const el = document.getElementById('syncStatus');
+  if(!el) return;
+  el.textContent = text;
+  el.style.color = isError ? 'var(--busy)' : 'var(--ok)';
+}
+
+boardRef.get().then(doc=>{
+  if(doc.exists){
+    loadState(doc.data());
+  } else {
+    lastResetDate = todayStr();
+    renderQueues(); renderStartPanel(); renderStaff(); renderStats(); renderLog(); renderDesignatedLog();
+    saveState();
+    setSyncStatus('실시간 동기화 중', false);
+  }
+  checkManualResetParam();
+  boardRef.onSnapshot(snap=>{
+    if(snap.exists) loadState(snap.data());
+  }, err=>{ console.error(err); setSyncStatus('연결 끊김', true); });
+}).catch(e=>{
+  console.error('Firebase 연결 실패, 로컬 모드로 실행', e);
+  lastResetDate = todayStr();
+  renderQueues(); renderStartPanel(); renderStaff(); renderStats(); renderLog(); renderDesignatedLog();
+  setSyncStatus('오프라인(로컬만 저장)', true);
+  checkManualResetParam();
+});
+
+setInterval(()=>{ renderStaff(); }, 1000);
+setInterval(()=>{ checkDailyReset(); }, 60000); // 1분마다 날짜가 바뀌었는지 확인
+</script>
