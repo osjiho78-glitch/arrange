@@ -38,9 +38,6 @@
   .addpanel .field label{display:block;font-size:11px;color:var(--sub);margin-bottom:4px;}
   .addpanel select, .addpanel input{width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:inherit;}
   .addpanel button{padding:9px 14px;border:none;border-radius:6px;background:var(--ink);color:#fff;font-weight:600;cursor:pointer;white-space:nowrap;}
-  .bulkrow{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px;}
-  .bulkrow textarea{width:100%;min-height:52px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;padding:8px;border:1px solid var(--line);border-radius:6px;resize:vertical;}
-  .bulkrow button{padding:8px 14px;border:1px solid var(--line);background:#fff;border-radius:6px;font-weight:600;cursor:pointer;align-self:start;}
 
   .queues{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px;}
   .qcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
@@ -48,13 +45,10 @@
   .qtag{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;padding:2px 8px;border-radius:5px;}
   .qtag.A{background:var(--a-bg);color:var(--a);} .qtag.B{background:var(--b-bg);color:var(--b);} .qtag.C{background:var(--c-bg);color:var(--c);} .qtag.D{background:var(--d-bg);color:var(--d);}
   .qmeta{font-size:11.5px;color:var(--sub);}
-  .typehead{display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
+  .typehead{display:flex;align-items:center;justify-content:space-between;}
   .typename{font-size:11.5px;color:var(--sub);}
   .typecount{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;}
-  .caret{font-size:10px;color:var(--sub);transition:transform .15s;}
-  .caret.open{transform:rotate(90deg);}
-  .patientlist{max-height:220px;overflow:auto;margin-top:8px;border-top:1px dashed var(--line);display:none;}
-  .patientlist.open{display:block;}
+  .patientlist{max-height:136px;overflow-y:auto;margin-top:8px;border-top:1px dashed var(--line);}
   .prow{display:flex;align-items:center;gap:6px;padding:5px 2px;font-size:12px;border-bottom:1px solid var(--line);cursor:pointer;}
   .prow.selected{background:#EEE9FB;}
   .teambadge{font-size:9px;background:#7C4DBF;color:#fff;padding:1px 5px;border-radius:4px;flex:none;}
@@ -149,53 +143,62 @@
   th{font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:.03em;font-weight:600;background:#FAFBFC;}
   tbody tr:last-child td{border-bottom:none;}
   .empty-log{color:var(--sub);text-align:center;padding:16px;font-size:12.5px;}
+  .pagetabs{display:flex;gap:8px;margin-bottom:18px;}
+  .pagetab{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--sub);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;cursor:pointer;}
+  .pagetab:hover{background:#F0F1F3;}
+  .pagetab.active{background:var(--ink);color:#fff;border-color:var(--ink);}
 </style>
 
 <div class="wrap">
   <h1>실시간 직원 응대 현황판 <span id="syncStatus" style="font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;vertical-align:middle;color:var(--sub);">연결 중...</span></h1>
   <p class="sub">A(수술상담) · B(시술상담) · C(당일 수술) · D(경과 환자) — 여러 기기에서 열면 실시간으로 같은 화면이 동기화됩니다.</p>
 
-  <div class="section-title">환자 등록</div>
-  <div class="addpanel" style="grid-template-columns:1fr 1.4fr 1fr auto;">
-    <div class="field"><label>파트</label>
-      <select id="inPart"><option value="A">A 파트 · 수술상담</option><option value="B">B 파트 · 시술상담</option><option value="C">C 파트 · 당일 수술</option><option value="D">D 파트 · 경과 환자</option></select>
-    </div>
-    <div class="field"><label>환자 이름/식별자</label>
-      <input id="inName" placeholder="예: 홍길동 (등록 시점이 내원시간으로 기록됩니다)">
-    </div>
-    <div class="field"><label>지정 직원(선택)</label>
-      <select id="inDesig"><option value="">지정 없음</option></select>
-    </div>
-    <button onclick="addPatientUI()">＋ 대기열에 추가</button>
-  </div>
-  <div class="bulkrow">
-    <textarea id="bulkArea" placeholder="파트,이름,지정직원(선택)  (한 줄에 한 명)&#10;A,홍길동&#10;B,김민지,3&#10;C,이서준"></textarea>
-    <button onclick="bulkAdd()">일괄 추가</button>
+  <div class="pagetabs">
+    <button class="pagetab active" id="tabBtn1" onclick="showPage(1)">1</button>
+    <button class="pagetab" id="tabBtn2" onclick="showPage(2)">2</button>
   </div>
 
-  <div class="section-title">파트별 대기열</div>
-  <div class="queues" id="queues"></div>
+  <div id="page1">
+    <div class="section-title">환자 등록</div>
+    <div class="addpanel" style="grid-template-columns:1fr 1.4fr 1fr auto;">
+      <div class="field"><label>파트</label>
+        <select id="inPart"><option value="A">A 파트 · 수술상담</option><option value="B">B 파트 · 시술상담</option><option value="C">C 파트 · 당일 수술</option><option value="D">D 파트 · 경과 환자</option></select>
+      </div>
+      <div class="field"><label>환자 이름/식별자</label>
+        <input id="inName" placeholder="예: 홍길동 (등록 시점이 내원시간으로 기록됩니다)">
+      </div>
+      <div class="field"><label>지정 직원(선택)</label>
+        <select id="inDesig"><option value="">지정 없음</option></select>
+      </div>
+      <button onclick="addPatientUI()">＋ 대기열에 추가</button>
+    </div>
 
-  <div class="section-title">파트별 오늘 시작 순번</div>
-  <div class="startrow" id="startPanel"></div>
+    <div class="section-title">파트별 대기열</div>
+    <div class="queues" id="queues"></div>
 
-  <div class="section-title">
-    <span id="staffCountTitle">직원 현황</span>
-    <button class="managebtn" onclick="toggleManagePanel()">⚙ 직원 관리</button>
-    <span class="legend">
-      <span>테두리 강조 = 그 파트에서 지금 순번이 돌아온 직원 (밀렸던 사람은 자기 차례가 올 때까지 계속 강조됨)</span>
-    </span>
+    <div class="section-title">
+      <span id="staffCountTitle">직원 현황</span>
+      <button class="managebtn" onclick="toggleManagePanel()">⚙ 직원 관리</button>
+      <span class="legend">
+        <span>테두리 강조 = 그 파트에서 지금 순번이 돌아온 직원 (밀렸던 사람은 자기 차례가 올 때까지 계속 강조됨)</span>
+      </span>
+    </div>
+    <div id="managePanel" style="display:none;"></div>
+    <div class="staffgrid" id="staffgrid"></div>
+
+    <div class="stats" id="stats"></div>
   </div>
-  <div id="managePanel" style="display:none;"></div>
-  <div class="staffgrid" id="staffgrid"></div>
 
-  <div class="stats" id="stats"></div>
+  <div id="page2" style="display:none;">
+    <div class="section-title">파트별 오늘 시작 순번</div>
+    <div class="startrow" id="startPanel"></div>
 
-  <div class="section-title">응대 기록</div>
-  <div id="logwrap"></div>
+    <div class="section-title">응대 기록</div>
+    <div id="logwrap"></div>
 
-  <div class="section-title">카운트 제외 상담 기록 (지정 · 경과)</div>
-  <div id="desigLogWrap"></div>
+    <div class="section-title">카운트 제외 상담 기록 (지정 · 경과)</div>
+    <div id="desigLogWrap"></div>
+  </div>
 </div>
 
 <script>
@@ -215,7 +218,6 @@ let pid = 1;
 
 function mkQueue(){ return {waiting:[], done:[]}; }
 let partsData = { A: mkQueue(), B: mkQueue(), C: mkQueue(), D: mkQueue() };
-let openLists = {};
 let selected = { A:new Set(), B:new Set(), C:new Set(), D:new Set() }; // 동반자(팀) 묶기용 선택 상태
 
 let staff = BASE_ORDER.map(id=>({
@@ -255,37 +257,12 @@ window.addPatientUI = function(){
   document.getElementById('inName').value='';
   renderQueues(); renderStaff(); saveState();
 };
-window.bulkAdd = function(){
-  const lines = document.getElementById('bulkArea').value.split('\n').map(l=>l.trim()).filter(Boolean);
-  if(lines.length===0) return;
-  lines.forEach(line=>{
-    const parts_ = line.split(',').map(s=>s.trim());
-    if(parts_.length<2) return;
-    const [part,name,desig] = parts_;
-    if(!['A','B','C','D'].includes(part) || !name) return;
-    const desigId = Number(desig);
-    if(part==='D' && !(desig && desigId>=1 && desigId<=7)) return; // D파트는 지정 직원 필수
-    if(desig && desigId>=1 && desigId<=7){
-      const s = staff.find(x=>x.id===desigId);
-      if(s && !s.busy && !s.off && !s.assignedPatient){
-        staff = staff.map(x=> x.id===desigId ? {...x, busy:true, part, patient:{id:pid++, name, designated:true}, startedAt:now()} : x);
-        return;
-      }
-      partsData[part].waiting.push({id:pid++, name, arrivedAt: now(), designatedStaff: desigId});
-    } else {
-      partsData[part].waiting.push({id:pid++, name, arrivedAt: now(), designatedStaff: null});
-    }
-  });
-  renderQueues(); renderStaff(); saveState();
-};
 
-window.toggleList = function(key){ openLists[key] = !openLists[key]; renderQueues(); };
 
 function renderQueues(){
   const el = document.getElementById('queues');
-  el.innerHTML = Object.keys(partsData).map(p=>{
+  el.innerHTML = ['A','B','C','D'].map(p=>{
     const q = partsData[p];
-    const open = !!openLists[p];
     const sel = selected[p];
     const listHTML = q.waiting.length===0
       ? '<div class="plempty">대기 환자 없음</div>'
@@ -316,14 +293,13 @@ function renderQueues(){
       </div>` : '';
     return `<div class="qcard">
       <div class="head"><span class="qtag ${p}">${p} 파트 · ${PART_LABEL[p]}</span><span class="qmeta">완료 ${q.done.length}</span></div>
-      <div class="typehead" onclick="toggleList('${p}')">
+      <div class="typehead">
         <span class="typename">대기 인원 <span style="font-size:10px;">(클릭/배분: 다음 순번 실장에게 자동 배정 · Ctrl+클릭: 동반자 선택)</span></span>
         <div style="display:flex;align-items:center;gap:6px;">
           <span class="typecount">${q.waiting.length}</span><span class="typename">명</span>
-          <span class="caret ${open?'open':''}">▶</span>
         </div>
       </div>
-      <div class="patientlist ${open?'open':''}">${listHTML}${groupbarHTML}</div>
+      <div class="patientlist">${listHTML}${groupbarHTML}</div>
     </div>`;
   }).join('');
 }
@@ -354,10 +330,19 @@ window.autoAssignPatient = function(part, patientId){
     if(!s || s.busy || s.off || s.assignedPatient){ alert(`지정된 직원 ${pat.designatedStaff}이(가) 지금 바빠서 배정할 수 없습니다. 비면 다시 시도해주세요.`); return; }
     staffId = s.id;
   } else {
-    const candidate = queue[part].find(sid=>{
+    const isAvailable = sid=>{
       const s = staff.find(x=>x.id===sid);
       return s && !s.busy && !s.off && !s.assignedPatient;
-    });
+    };
+    let candidate = queue[part].find(isAvailable);
+    if(!candidate){
+      // 이번 순환에 남은 사람 중엔 없지만, 전체 직원 중 비어있는 사람이 있으면 새 순환으로 리필해서 재탐색
+      const anyAvailable = staff.some(s=>!s.busy && !s.off && !s.assignedPatient);
+      if(anyAvailable){
+        queue[part] = [...partOrder[part]];
+        candidate = queue[part].find(isAvailable);
+      }
+    }
     if(!candidate){ alert('지금 배정 가능한 직원이 없습니다.'); return; }
     staffId = candidate;
   }
@@ -474,6 +459,13 @@ function renderInDesigOptions(){
   sel.innerHTML = '<option value="">지정 없음</option>' + staff.map(s=>`<option value="${s.id}">직원 ${s.id}</option>`).join('');
   if(staff.some(s=>String(s.id)===prevVal)) sel.value = prevVal;
 }
+
+window.showPage = function(n){
+  document.getElementById('page1').style.display = n===1 ? 'block' : 'none';
+  document.getElementById('page2').style.display = n===2 ? 'block' : 'none';
+  document.getElementById('tabBtn1').classList.toggle('active', n===1);
+  document.getElementById('tabBtn2').classList.toggle('active', n===2);
+};
 
 window.toggleManagePanel = function(){
   managePanelOpen = !managePanelOpen;
@@ -718,7 +710,7 @@ window.undoComplete = function(id){
 function renderStats(){
   const total = staff.reduce((s,x)=>s+x.doneCount,0);
   let totalWaiting=0;
-  Object.keys(partsData).forEach(p=>{ totalWaiting+=partsData[p].waiting.length; });
+  ['A','B','C','D'].forEach(p=>{ totalWaiting+=partsData[p].waiting.length; });
   const durs = log.map(l=>l.durationMs);
   const avg = durs.length ? Math.round(durs.reduce((a,b)=>a+b,0)/durs.length/1000/60*10)/10 : 0;
   const counts = staff.map(s=>s.doneCount);
