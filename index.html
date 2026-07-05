@@ -226,16 +226,7 @@ let staff = BASE_ORDER.map(id=>({
 let queue = { A:[...partOrder.A], B:[...partOrder.B], C:[...partOrder.C], D:[...partOrder.D] }; // 파트별로 아직 이번 순환에서 응대 안 한 직원 목록 (맨 앞이 다음 차례)
 let log = [];
 let designatedLog = [];
-
-function seedDemo(){
-  const seedCounts = { A:30, B:40, C:20 };
-  const t0 = now() - 40*60000;
-  Object.keys(seedCounts).forEach(p=>{
-    for(let i=1;i<=seedCounts[p];i++){
-      partsData[p].waiting.push({id:pid++, name:`환자-${p}${String(i).padStart(2,'0')}`, arrivedAt: t0 + i*45000});
-    }
-  });
-}
+let lastResetDate = null; // 마지막으로 하루 초기화가 적용된 날짜 (YYYY-MM-DD)
 
 function fmtClock(ts){ const d=new Date(ts); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
 function fmtHHMM(ts){ const d=new Date(ts); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
@@ -763,7 +754,7 @@ let suppressSave = false; // 원격 변경 반영 중에는 재저장 방지
 
 function saveState(){
   if(suppressSave) return;
-  const snapshot = { staff, partsData, queue, partOrder, log, designatedLog, pid, nextStaffId, BASE_ORDER, updatedAt: Date.now() };
+  const snapshot = { staff, partsData, queue, partOrder, log, designatedLog, pid, nextStaffId, BASE_ORDER, lastResetDate, updatedAt: Date.now() };
   boardRef.set(snapshot).catch(e=>{ console.error('저장 실패', e); setSyncStatus('저장 실패 (네트워크 확인)', true); });
 }
 
@@ -778,36 +769,13 @@ function loadState(data){
   pid = data.pid || pid;
   nextStaffId = data.nextStaffId || nextStaffId;
   BASE_ORDER = data.BASE_ORDER || BASE_ORDER;
+  lastResetDate = data.lastResetDate || lastResetDate;
   renderQueues(); renderStartPanel(); renderStaff(); renderStats(); renderLog(); renderDesignatedLog();
   suppressSave = false;
   setSyncStatus('실시간 동기화 중', false);
+  checkDailyReset();
 }
 
-function setSyncStatus(text, isError){
-  const el = document.getElementById('syncStatus');
-  if(!el) return;
-  el.textContent = text;
-  el.style.color = isError ? 'var(--busy)' : 'var(--ok)';
-}
-
-boardRef.get().then(doc=>{
-  if(doc.exists){
-    loadState(doc.data());
-  } else {
-    seedDemo();
-    renderQueues(); renderStartPanel(); renderStaff(); renderStats(); renderLog(); renderDesignatedLog();
-    saveState();
-    setSyncStatus('실시간 동기화 중', false);
-  }
-  boardRef.onSnapshot(snap=>{
-    if(snap.exists) loadState(snap.data());
-  }, err=>{ console.error(err); setSyncStatus('연결 끊김', true); });
-}).catch(e=>{
-  console.error('Firebase 연결 실패, 로컬 모드로 실행', e);
-  seedDemo();
-  renderQueues(); renderStartPanel(); renderStaff(); renderStats(); renderLog(); renderDesignatedLog();
-  setSyncStatus('오프라인(로컬만 저장)', true);
-});
-
-setInterval(()=>{ renderStaff(); }, 1000);
-</script>
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padSt
